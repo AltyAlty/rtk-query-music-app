@@ -1,8 +1,22 @@
 import s from './PlaylistsPage.module.css';
-import {useFetchPlaylistsQuery} from '@/features/playlists/api/playlistsAPI.ts';
+import {useState} from 'react';
+import {useForm} from 'react-hook-form';
+import {
+    useDeletePlaylistMutation,
+    useFetchPlaylistsQuery
+} from '@/features/playlists/api/playlistsAPI.ts';
+import {CreatePlaylistForm} from '@/features/playlists/ui/PlaylistsPage/CreatePlaylistForm/CreatePlaylistForm.tsx';
+import type {PlaylistData, UpdatePlaylistArgs} from '@/features/playlists/api/playlistsAPI.types.ts';
+import {EditPlaylistForm} from '@/features/playlists/ui/PlaylistsPage/EditPlaylistForm/EditPlaylistForm.tsx';
+import {PlaylistItem} from '@/features/playlists/ui/PlaylistsPage/PlaylistItem/PlaylistItem.tsx';
 
 export const PlaylistsPage = () => {
-    /*Вызов хука, созданного при помощи RTK Query, возвращает объект. Внутри этого объекта может быть несколько свойств:
+    /*Используем хук "useState()" для сохранения состояния находимся ли мы в режиме редактирования плейлиста или нет.*/
+    const [playlistId, setPlaylistId] = useState<string | null>(null);
+    const {register, handleSubmit, reset} = useForm<UpdatePlaylistArgs>();
+
+    /*Вызов query-хука, созданного при помощи RTK Query, возвращает объект. Внутри этого объекта может быть несколько
+    свойств:
     - "currentData" - последний успешно полученные ответ.
     - "data" - последний успешно полученные ответ, но может сбрасываться на undefined, если делается новый запрос с
     новыми аргументами.
@@ -31,22 +45,54 @@ export const PlaylistsPage = () => {
     Изначально false.
     - "refetchOnReconnect" - позволяет принудительно перезапускать запрос при восстановлении сетевого подключения.
     Изначально false.*/
-    const {data, isLoading} = useFetchPlaylistsQuery({pageSize: 4});
+    const {data, isLoading} = useFetchPlaylistsQuery({pageSize: 6});
+    const [deletePlaylist] = useDeletePlaylistMutation();
+
+    const deletePlaylistHandler = (playlistId: string) => {
+        if (confirm('Delete the playlist?')) deletePlaylist(playlistId);
+    };
+
+    const editPlaylistHandler = (playlist: PlaylistData | null) => {
+        if (playlist) {
+            setPlaylistId(playlist.id);
+
+            reset({
+                title: playlist.attributes.title,
+                description: playlist.attributes.description,
+                tagIds: playlist.attributes.tags.map(t => t.id),
+            });
+        } else {
+            setPlaylistId(null);
+        }
+    };
 
     if (isLoading) return <h1>Loading</h1>;
 
     return (
         <div className={s.container}>
             <h1>Playlists page</h1>
+            <CreatePlaylistForm/>
 
             <div className={s.items}>
                 {/*Ответ запроса изначально undefined, поэтому используем "?".*/}
                 {data?.data.map(playlist => {
+                    const isEditing = playlistId === playlist.id;
+
                     return (
                         <div className={s.item} key={playlist.id}>
-                            <div>title: {playlist.attributes.title}</div>
-                            <div>description: {playlist.attributes.description}</div>
-                            <div>userName: {playlist.attributes.user.name}</div>
+                            {isEditing ? (
+                                <EditPlaylistForm
+                                    playlistId={playlistId}
+                                    handleSubmit={handleSubmit}
+                                    register={register}
+                                    editPlaylist={editPlaylistHandler}
+                                    setPlaylistId={setPlaylistId}/>
+                            ) : (
+                                <PlaylistItem
+                                    playlist={playlist}
+                                    deletePlaylist={deletePlaylistHandler}
+                                    editPlaylist={editPlaylistHandler}/>
+                            )}
                         </div>
                     );
                 })}

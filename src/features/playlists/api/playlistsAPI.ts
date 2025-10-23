@@ -2,7 +2,11 @@
 "@reduxjs/toolkit/query/react". Также импортируем функцию "fetchBaseQuery()" из RTK Query, которая является оберткой над
 функцией "fetch()" и упрощает осуществление запросов.*/
 import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
-import type {FetchPlaylistsArgs, PlaylistsResponse} from '@/features/playlists/api/playlistsAPI.types.ts';
+import type {
+    CreatePlaylistArgs,
+    FetchPlaylistsArgs, PlaylistData,
+    PlaylistsResponse, UpdatePlaylistArgs
+} from '@/features/playlists/api/playlistsAPI.types.ts';
 
 /*Функция "createApi()" из RTK Query может принимать много параметров в виде большого объекта. Используемые в данном
 случае параметры (все обязательные):
@@ -35,25 +39,65 @@ export const playlistsAPI = createApi({
 
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_BASE_URL,
-        headers: {'API-KEY': import.meta.env.VITE_API_KEY}
+        headers: {'API-KEY': import.meta.env.VITE_API_KEY},
+        /*Метод "prepareHeaders()" принимает заголовки "headers" и API "api". Используем этот метод, чтобы прикреплять
+        токен доступа к запросам. Метод "prepareHeaders()" работает как перехватчик всех запросов, чтобы добавлять к ним
+        дополнительную информацию. В итоге и API-ключ и токен доступа будут указаны в Request Headers в запросах. При
+        помощи параметра "api" можно, например, определять какой запрос выполняется и на какой endpoint.*/
+        prepareHeaders: (headers, api) => {
+            console.log(`Endpoint: ${api.endpoint}`);
+            console.log(`Arguments:`);
+            console.log(api.arg);
+            headers.set('Authorization', `Bearer ${import.meta.env.VITE_ACCESS_TOKEN}`);
+            return headers;
+        }
     }),
 
     endpoints: build => ({
-        /*Описываем GET-запрос для получения плейлистов.*/
+        /*Описываем GET-запросы для получения плейлистов.*/
         fetchPlaylists: build.query<PlaylistsResponse, FetchPlaylistsArgs>({
-            query: ({pageSize}) => (
-                {
-                    method: 'get',
-                    url: `playlists?pageSize=${pageSize}`
-                }
-            ),
+            query: ({pageSize}) => ({
+                method: 'get',
+                url: `playlists?pageSize=${pageSize}`
+            }),
 
             /*Сокращенная версия.*/
-            // query: () => `playlists`,
+            // query: () => `playlists`
+        }),
+
+        /*Описываем POST-запросы для создания плейлиста. Можно создать не больше 10 плейлистов.*/
+        createPlaylist: build.mutation<{ data: PlaylistData }, CreatePlaylistArgs>({
+            query: (body) => ({
+                method: 'post',
+                url: `playlists`,
+                body
+            })
+        }),
+
+        /*Описываем DELETE-запросы для удаления плейлиста.*/
+        deletePlaylist: build.mutation<void, string>({
+            query: (playlistId) => ({
+                method: 'delete',
+                url: `playlists/${playlistId}`
+            })
+        }),
+
+        /*Описываем UPDATE-запросы для обновления плейлиста.*/
+        updatePlaylist: build.mutation<void, { playlistId: string; body: UpdatePlaylistArgs }>({
+            query: ({playlistId, body}) => ({
+                method: 'put',
+                url: `playlists/${playlistId}`,
+                body
+            })
         })
     })
 });
 
 /*Получаем хук "useFetchPlaylistsQuery()" из API "playlistsAPI". Название хука формируется следующим образом:
 "use" + "FetchPlaylists" + "query" = "useFetchPlaylistsQuery".*/
-export const {useFetchPlaylistsQuery} = playlistsAPI;
+export const {
+    useFetchPlaylistsQuery,
+    useCreatePlaylistMutation,
+    useDeletePlaylistMutation,
+    useUpdatePlaylistMutation
+} = playlistsAPI;

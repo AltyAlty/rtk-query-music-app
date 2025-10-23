@@ -3,6 +3,7 @@
 Установка типизации node: pnpm add @types/node -D
 Установка React Router: pnpm i react-router
 Установка Redux Toolkit и React Redux: pnpm add @reduxjs/toolkit react-redux
+Установка React Hook Form: pnpm add react-hook-form
 
 Запуск приложения: pnpm run dev
 
@@ -103,3 +104,21 @@ RTK Query использует слайсы под капотом: при соз
 4. Обернуть компонент "App" компонентом "Provider", передав в него store.
 5. Экспортировать хук их созданного API.
 6. Вызвать хук в компоненте и получить в ответ данные.
+
+LESSON 003:
+
+Для работы с формами в этом проекте используется библиотека React Hook Form.
+
+Как можно залогиниться:
+1. Перейти на "https://musicfun.it-incubator.app/api", нажать "Authorize" и указать API-ключ.
+2. Перейти на "https://oauth.apihub.it-incubator.io/realms/apihub/protocol/openid-connect/auth?client_id=musicfun&response_type=code&redirect_uri=http://localhost:3000/oauth2/callback&scope=openid".
+3. Залогиниться как на "apihub.it-incubator.io".
+4. Из полученной ссылки взять код после "code=".
+5. Вставить полученный код в поле "code" в POST-запросе на "/auth/login".
+6. Из ответа взять "accessToken" и на его основе создать переменную окружения для токена доступа.
+7. Прикреплять токен доступа к каждому запросу при помощи метода "prepareHeaders()":
+prepareHeaders: (headers, api) => {
+    headers.set('Authorization', `Bearer ${import.meta.env.VITE_ACCESS_TOKEN}`);
+    return headers;
+}
+

@@ -37,7 +37,7 @@ export type PlaylistAttributes = {
     currentUserReaction: CurrentUserReaction
 };
 
-/*Тип для аргументов запроса по получению плейлистов.*/
+/*Тип для аргументов запросов по получению плейлистов.*/
 export type FetchPlaylistsArgs = {
     pageNumber?: number
     pageSize?: number
@@ -47,4 +47,17 @@ export type FetchPlaylistsArgs = {
     tagsIds?: string[]
     userId?: string
     trackId?: string
+};
+
+/*Тип для аргументов запросов по созданию плейлиста.*/
+export type CreatePlaylistArgs = {
+    title: string
+    description: string
+};
+
+/*Тип для аргументов запросов по обновлению плейлиста.*/
+export type UpdatePlaylistArgs = {
+    title: string
+    description: string
+    tagIds: string[]
 };
